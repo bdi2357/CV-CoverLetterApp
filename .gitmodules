@@ -1,0 +1,3 @@
+[submodule "CoverLetterGen"]
+	path = CoverLetterGen
+	url = https://github.com/bdi2357/CoverLetterGen
