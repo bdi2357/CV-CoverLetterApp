@@ -1,0 +1,4 @@
+temp_cv/
+Output/
+__pycache__/
+.env
