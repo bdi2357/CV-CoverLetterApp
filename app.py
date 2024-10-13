@@ -1,10 +1,25 @@
 import streamlit as st
-import openai
-from docx import Document
 import os
+from openai import OpenAI
+from docx import Document
+from PyPDF2 import PdfReader
 
 # Load the OpenAI API key from the Streamlit secrets
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+def extract_text_from_pdf(pdf_file):
+    """Extracts text from a PDF file."""
+    reader = PdfReader(pdf_file)
+    text = ''
+    for page in reader.pages:
+        text += page.extract_text()
+    return text
+
+def extract_text_from_docx(docx_file):
+    """Extracts text from a DOCX file."""
+    doc = Document(docx_file)
+    text = '\n'.join([para.text for para in doc.paragraphs])
+    return text
 
 def generate_cover_letter(cv_text, job_description):
     """
@@ -29,15 +44,21 @@ def generate_cover_letter(cv_text, job_description):
     The cover letter should be concise, professional, and highlight relevant experience and skills.
     """
 
-    # Use the OpenAI API to generate the cover letter
-    response = openai.Completion.create(
-        engine="text-davinci-003",  # You can adjust this based on the GPT model you want to use
-        prompt=prompt,
-        max_tokens=500
+    # Use the OpenAI chat-based API to generate the cover letter
+    completion = client.chat.completions.create(
+        model="gpt-3.5-turbo",  # You can change this to gpt-4 if needed
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a professional assistant generating cover letters based on CV and job descriptions.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.0,
     )
 
     # Extract the generated cover letter from the API response
-    cover_letter = response.choices[0].text.strip()
+    cover_letter = completion.choices[0].message.content
     return cover_letter
 
 def save_cover_letter_to_docx(cover_letter_text, file_name):
@@ -69,8 +90,12 @@ if st.button('Generate Cover Letter'):
     if uploaded_cv is None or job_description.strip() == '':
         st.warning('Please upload your CV and enter a job description.')
     else:
-        # Read the uploaded CV file content
-        cv_text = uploaded_cv.getvalue().decode("utf-8")
+        # Detect file type and extract text accordingly
+        file_type = uploaded_cv.type
+        if file_type == "application/pdf":
+            cv_text = extract_text_from_pdf(uploaded_cv)
+        elif file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+            cv_text = extract_text_from_docx(uploaded_cv)
 
         # Generate the cover letter using the CV and job description
         cover_letter = generate_cover_letter(cv_text, job_description)
