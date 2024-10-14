@@ -7,6 +7,7 @@ from PyPDF2 import PdfReader
 # Load the OpenAI API key from the Streamlit secrets
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
+
 def extract_text_from_pdf(pdf_file):
     """Extracts text from a PDF file."""
     reader = PdfReader(pdf_file)
@@ -15,11 +16,13 @@ def extract_text_from_pdf(pdf_file):
         text += page.extract_text()
     return text
 
+
 def extract_text_from_docx(docx_file):
     """Extracts text from a DOCX file."""
     doc = Document(docx_file)
     text = '\n'.join([para.text for para in doc.paragraphs])
     return text
+
 
 def generate_cover_letter(cv_text, job_description):
     """
@@ -61,6 +64,7 @@ def generate_cover_letter(cv_text, job_description):
     cover_letter = completion.choices[0].message.content
     return cover_letter
 
+
 def save_cover_letter_to_docx(cover_letter_text, file_name):
     """
     Saves the generated cover letter as a DOCX file.
@@ -76,20 +80,26 @@ def save_cover_letter_to_docx(cover_letter_text, file_name):
     doc.save(file_path)
     return file_path
 
+
 # Streamlit UI components
-st.title('AI Cover Letter Generator')
+st.title('📄 AI Cover Letter Generator')
+
+st.write("Upload your CV and paste the job description to generate a professional cover letter.")
+st.write("")
 
 # File uploader for CV (PDF or DOCX)
-uploaded_cv = st.file_uploader('Upload your CV (PDF or DOCX)', type=['pdf', 'docx'])
+uploaded_cv = st.file_uploader('📁 Upload your CV (PDF or DOCX)', type=['pdf', 'docx'])
 
 # Text area for job description
-job_description = st.text_area('Paste the job description here', height=200)
+job_description = st.text_area('✍️ Paste the job description here:', height=200)
 
 # Button to generate cover letter
 if st.button('Generate Cover Letter'):
     if uploaded_cv is None or job_description.strip() == '':
-        st.warning('Please upload your CV and enter a job description.')
+        st.warning('⚠️ Please upload your CV and enter a job description.')
     else:
+        st.info("✍️ Generating your cover letter... Please wait.")
+
         # Detect file type and extract text accordingly
         file_type = uploaded_cv.type
         if file_type == "application/pdf":
@@ -104,9 +114,9 @@ if st.button('Generate Cover Letter'):
         docx_file_path = save_cover_letter_to_docx(cover_letter, "cover_letter.docx")
 
         # Display the cover letter to the user
-        st.success('Cover Letter generated successfully!')
+        st.success('✅ Cover Letter generated successfully!')
         st.download_button(
-            label='Download Cover Letter',
+            label='📥 Download Cover Letter',
             data=open(docx_file_path, 'rb').read(),
             file_name='cover_letter.docx',
             mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
