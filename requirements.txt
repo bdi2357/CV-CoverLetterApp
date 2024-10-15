@@ -1,7 +1,6 @@
 streamlit==1.25.0          # Ensure compatibility with the latest Streamlit features
 openai==0.27.8             # For OpenAI API integration
 python-docx==0.8.11        # To handle DOCX file generation
-reportlab==3.6.13          # For PDF file generation
 requests==2.31.0           # To make HTTP requests (if needed)
 PyYAML==6.0                # For parsing YAML configurations
-dotenv==1.0.0              # To load environment variables from a .env file (if needed)
+python-dotenv>=0.21.0
