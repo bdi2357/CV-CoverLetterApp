@@ -3,4 +3,3 @@ openai==0.27.8
 python-docx==0.8.11
 requests==2.31.0
 python-dotenv>=0.21.0
-pillow==8.1.2
