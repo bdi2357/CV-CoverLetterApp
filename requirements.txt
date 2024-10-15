@@ -1,6 +1,6 @@
-streamlit==1.25.0          # Ensure compatibility with the latest Streamlit features
-openai==0.27.8             # For OpenAI API integration
-python-docx==0.8.11        # To handle DOCX file generation
-requests==2.31.0           # To make HTTP requests (if needed)
-PyYAML==6.0                # For parsing YAML configurations
+streamlit==1.25.0
+openai==0.27.8
+python-docx==0.8.11
+requests==2.31.0
+PyYAML==5.4.1  # Downgrade to avoid build issues
 python-dotenv>=0.21.0
