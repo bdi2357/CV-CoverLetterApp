@@ -2,15 +2,26 @@ import streamlit as st
 import os
 from docx import Document
 from PyPDF2 import PdfReader
-
+import openai
 # Assuming BasicIterativeAgent is part of CoverLetterGen, import it here
 from CoverLetterGen.ai_interaction import OpenAIModel, CoverLetterGenerator
 from CoverLetterGen.basic_iterative import BasicIterativeAgent
+
+if "OPENAI_API_KEY" in st.secrets:
+    st.write("API key loaded successfully.")  # This will be shown in the app
+    print(f"OPENAI_API_KEY: {st.secrets['OPENAI_API_KEY']}")  # This will be printed in the logs
+else:
+    st.write("OPENAI_API_KEY not found in secrets.")  # If the key is not found
+    print("OPENAI_API_KEY not found.")
+# Verify the version of the OpenAI library
+st.write(f"OpenAI library version: {openai.__version__}")  # Shows in the app
+print(f"OpenAI library version: {openai.__version__}")  # Shows in the logs
 
 # Initialize the BasicIterativeAgent
 ai_model = OpenAIModel(api_key=st.secrets["OPENAI_API_KEY"], model_name='gpt-4o')
 cover_letter_gen = CoverLetterGenerator(ai_model)
 agent = BasicIterativeAgent(cover_letter_gen)
+
 
 def extract_text_from_pdf(pdf_file):
     """Extracts text from a PDF file."""
