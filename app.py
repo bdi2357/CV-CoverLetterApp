@@ -4,6 +4,9 @@ from docx import Document
 from PyPDF2 import PdfReader
 import openai
 import logging
+import os
+print("Available files: ", os.listdir())
+print("Available in CoverLetterGen: ", os.listdir('CoverLetterGen'))
 # Assuming BasicIterativeAgent is part of CoverLetterGen, import it here
 from CoverLetterGen.ai_interaction import OpenAIModel, CoverLetterGenerator
 from CoverLetterGen.basic_iterative import BasicIterativeAgent
