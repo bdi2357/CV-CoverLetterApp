@@ -3,6 +3,7 @@ import os
 from docx import Document
 from PyPDF2 import PdfReader
 import openai
+import logging
 # Assuming BasicIterativeAgent is part of CoverLetterGen, import it here
 from CoverLetterGen.ai_interaction import OpenAIModel, CoverLetterGenerator
 from CoverLetterGen.basic_iterative import BasicIterativeAgent
@@ -16,7 +17,7 @@ else:
 # Verify the version of the OpenAI library
 st.write(f"OpenAI library version: {openai.__version__}")  # Shows in the app
 print(f"OpenAI library version: {openai.__version__}")  # Shows in the logs
-
+logging.info(f"OpenAI library version: {openai.__version__}")
 # Initialize the BasicIterativeAgent
 ai_model = OpenAIModel(api_key=st.secrets["OPENAI_API_KEY"], model_name='gpt-4o')
 cover_letter_gen = CoverLetterGenerator(ai_model)
