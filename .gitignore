@@ -4,3 +4,4 @@ __pycache__/
 .env
 :wq
 .gitmodules
+.streamlit/secrets.toml
