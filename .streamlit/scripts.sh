@@ -1,4 +1,5 @@
 # scripts.sh
+echo "Submodules initialized and updated"
 git submodule deinit -f --all
 rm -rf .git/modules/CoverLetterGen
 rm -rf CoverLetterGen
