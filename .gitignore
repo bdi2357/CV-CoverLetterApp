@@ -2,4 +2,5 @@ temp_cv/
 Output/
 __pycache__/
 .env
-.streamlit/secrets.toml
+:wq
+.gitmodules
