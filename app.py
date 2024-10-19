@@ -87,10 +87,11 @@ if st.button('Generate Cover Letter'):
         cover_letter = agent.generate_cover_letter(cv_text, job_description)
 
         # Optionally improve the generated cover letter
-        improved_cover_letter = agent.improve_cover_letter(cv_text, cover_letter, job_description)
+        improved_cover_letter, final_critique = agent.improve_cover_letter(cv_text, cover_letter, job_description)
 
         # Save the improved cover letter as a DOCX file
         docx_file_path = save_cover_letter_to_docx(improved_cover_letter, "cover_letter.docx")
+        critique_cover_file_path = save_cover_letter_to_docx(final_critique, "cover_letter_critique.docx")
 
         # Display the cover letter to the user
         st.success('✅ Cover Letter generated successfully!')
@@ -98,5 +99,11 @@ if st.button('Generate Cover Letter'):
             label='📥 Download Cover Letter',
             data=open(docx_file_path, 'rb').read(),
             file_name='cover_letter.docx',
+            mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        st.download_button(
+            label='📥 Download Cover Letter Critique',
+            data=open(critique_cover_file_path, 'rb').read(),
+            file_name='cover_letter_critique.docx',
             mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         )
