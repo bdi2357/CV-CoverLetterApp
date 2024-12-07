@@ -16,7 +16,9 @@ from CoverLetterGen.basic_iterative import BasicIterativeAgent
 #print(f"OpenAI library version: {openai.__version__}")  # Shows in the logs
 logging.info(f"OpenAI library version: {openai.__version__}")
 # Initialize the BasicIterativeAgent
+"H1"
 ai_model = OpenAIModel(api_key=st.secrets["OPENAI_API_KEY"], model_name='gpt-4o')
+"H2"
 cover_letter_gen = CoverLetterGenerator(ai_model)
 agent = BasicIterativeAgent(cover_letter_gen)
 
