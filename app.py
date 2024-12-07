@@ -3,6 +3,7 @@ import os
 from docx import Document
 from PyPDF2 import PdfReader
 import openai
+print(openai.__version__)
 import logging
 ##
 import os
