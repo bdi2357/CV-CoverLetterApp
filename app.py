@@ -20,8 +20,8 @@ if openai.api_key:
 else:
     st.write("OpenAI API key is not set.")
 st.write(dir(openai))
-client = OpenAI(api_key=api_key)
-
+client = OpenAI()
+st.write("VVVV")
 def print_llm_response(prompt):
     """This function takes as input a prompt, which must be a string enclosed in quotation marks,
     and passes it to OpenAI's GPT3.5 model. The function then prints the response of the model.
