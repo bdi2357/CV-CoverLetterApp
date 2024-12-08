@@ -78,7 +78,7 @@ class GeminiModel(LLMModel):
 # OpenAI implementation of LLMModel
 class OpenAIModel(LLMModel):
     """
-    Class to interact with the OpenAI API using a client instance.
+    Class to interact with the OpenAI API using a clIent instance.
     """
 
     def __init__(self, api_key, model_name='gpt-3.5-turbo'):
@@ -89,7 +89,8 @@ class OpenAIModel(LLMModel):
             api_key (str): The OpenAI API key.
             model_name (str): The model to use, default is 'gpt-3.5-turbo'.
         """
-        import openai
+
+
         self.client = openai.OpenAI(api_key=api_key)
         self.model_name = model_name
 
