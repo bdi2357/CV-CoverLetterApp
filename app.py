@@ -5,7 +5,8 @@ from PyPDF2 import PdfReader
 import openai
 print(openai.__version__)
 "YYYY"
-"%s"%openai.__version__
+"openai version %s"%openai.__version__
+"streamlit version %s"%st.__version__
 import logging
 ##
 import os
@@ -14,6 +15,15 @@ from CoverLetterGen.ai_interaction import OpenAIModel, CoverLetterGenerator
 from CoverLetterGen.basic_iterative import BasicIterativeAgent
 api_key =  st.secrets["OPENAI_API_KEY"]
 openai.api_key = api_key
+
+import requests
+
+try:
+    response = requests.get("https://api.openai.com/v1")
+    st.write(f"Connectivity Test: {response.status_code}")
+except Exception as e:
+    st.write(f"Network Error: {e}")
+
 client = OpenAI(api_key=api_key)
 
 def print_llm_response(prompt):
