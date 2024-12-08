@@ -12,32 +12,44 @@ import os
 from  openai import OpenAI
 from CoverLetterGen.ai_interaction import OpenAIModel, CoverLetterGenerator
 from CoverLetterGen.basic_iterative import BasicIterativeAgent
-
 api_key =  st.secrets["OPENAI_API_KEY"]
 openai.api_key = api_key
-if openai.api_key:
-    st.write("OpenAI API key is set.")
-else:
-    st.write("OpenAI API key is not set.")
-st.write(dir(openai))
+client = OpenAI(api_key=api_key)
 
-# Test API call
-try:
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "Write a cover letter for a software engineer position."}
-        ],
-        temperature=0.7
-    )
-    st.write(response["choices"][0]["message"]["content"])
-except Exception as e:
-    st.error(f"An error occurred: {e}")
+def print_llm_response(prompt):
+    """This function takes as input a prompt, which must be a string enclosed in quotation marks,
+    and passes it to OpenAI's GPT3.5 model. The function then prints the response of the model.
+    """
+    llm_response = get_llm_response(prompt)
+    print(llm_response)
 
-# Print the response
-st.write(response["choices"][0]["message"]["content"])
 
+def get_llm_response(prompt):
+    """This function takes as input a prompt, which must be a string enclosed in quotation marks,
+    and passes it to OpenAI's GPT3.5 model. The function then saves the response of the model as
+    a string.
+    """
+    try:
+        if not isinstance(prompt, str):
+            raise ValueError("Input must be a string enclosed in quotes.")
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo-0125",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a helpful but terse AI assistant who gets straight to the point.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.0,
+        )
+        response = completion.choices[0].message.content
+        return response
+    except TypeError as e:
+        print("Error:", str(e))
+
+"XXX"
+print_llm_response("pi 5 numbers after the decimal point")
 # Verify the version of the OpenAI library
 #st.write(f"OpenAI library version: {openai.__version__}")  # Shows in the app
 #print(f"OpenAI library version: {openai.__version__}")  # Shows in the logs
