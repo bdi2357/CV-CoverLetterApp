@@ -20,6 +20,12 @@ openai.api_key = api_key
 #print(f"OpenAI library version: {openai.__version__}")  # Shows in the logs
 logging.info(f"OpenAI library version: {openai.__version__}")
 # Initialize the BasicIterativeAgent
+"H-1"
+response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Your prompt here"}],
+    temperature=0.7
+)
 "H0"
 client = openai.OpenAI()
 "H1"
