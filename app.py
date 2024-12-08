@@ -47,7 +47,7 @@ def get_llm_response(prompt):
     except TypeError as e:
         print("Error:", str(e))
 
-
+"XXX"
 print_llm_response("pi 5 numbers after the decimal point")
 # Verify the version of the OpenAI library
 #st.write(f"OpenAI library version: {openai.__version__}")  # Shows in the app
