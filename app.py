@@ -21,7 +21,7 @@ openai.api_key = api_key
 logging.info(f"OpenAI library version: {openai.__version__}")
 # Initialize the BasicIterativeAgent
 "H0"
-client = openai.OpenAI(api_key=api_key)
+client = openai.OpenAI()
 "H1"
 ai_model = OpenAIModel(api_key= api_key, model_name='gpt-4o')
 "H2"
