@@ -21,14 +21,19 @@ else:
     st.write("OpenAI API key is not set.")
 st.write(dir(openai))
 
-response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",  # Replace with "gpt-4" if needed
-    messages=[
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": "Write a cover letter for a software engineer position."}
-    ],
-    temperature=0.7
-)
+# Test API call
+try:
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Write a cover letter for a software engineer position."}
+        ],
+        temperature=0.7
+    )
+    st.write(response["choices"][0]["message"]["content"])
+except Exception as e:
+    st.error(f"An error occurred: {e}")
 
 # Print the response
 st.write(response["choices"][0]["message"]["content"])
