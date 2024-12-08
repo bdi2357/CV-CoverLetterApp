@@ -12,12 +12,14 @@ import os
 from  openai import OpenAI
 from CoverLetterGen.ai_interaction import OpenAIModel, CoverLetterGenerator
 from CoverLetterGen.basic_iterative import BasicIterativeAgent
+
 api_key =  st.secrets["OPENAI_API_KEY"]
 openai.api_key = api_key
 if openai.api_key:
     st.write("OpenAI API key is set.")
 else:
     st.write("OpenAI API key is not set.")
+st.write(dir(openai))
 client = OpenAI(api_key=api_key)
 
 def print_llm_response(prompt):
