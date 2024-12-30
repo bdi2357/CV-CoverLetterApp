@@ -1,28 +1,37 @@
 # main.py
 
 import os
-from ai_interaction import OpenAIModel, CoverLetterGenerator
-from basic_iterative import BasicIterativeAgent  # Import BasicIterativeAgent
+from .ai_interaction import OpenAIModel, CoverLetterGenerator
+from .basic_iterative import BasicIterativeAgent  # Import BasicIterativeAgent
 #from actor_critic import ActorCriticAgent  # Import ActorCriticAgent
-from data_handling import load_and_extract_text, extract_applicant_name
-from utilities import create_pdf
-from dotenv import load_dotenv
+from .data_handling import load_and_extract_text, extract_applicant_name
+#from utilities import create_pdf
+#from dotenv import load_dotenv
+from .parsing_cv_to_dict import CVParserAI
+#load_dotenv('.env', override=True)
+from openai import OpenAI
+from .doc_from_template import generate_cv
+import toml
+import streamlit as st
+#api_key =  st.secrets["OPENAI_API_KEY"]
+os.environ["STREAMLIT_SECRETS_PATH"] = r"C:\Users\itayb\PycharmProjects\CV-CoverLetterApp\.streamlit\secrets.toml"
 
-load_dotenv('.env', override=True)
+# Load the secrets file manually
+secrets_path = os.environ["STREAMLIT_SECRETS_PATH"]
+with open(secrets_path, "r") as file:
+    secrets = toml.load(file)
 
-def main(cv_file_path, job_description_text, llm_provider='openai', method='basic'):
-    # Load API key securely
-    api_key = os.getenv('OPENAI_API_KEY')
-    if not api_key:
-        raise ValueError("API key not found. Please set the appropriate environment variable.")
+# Access the API key
+print(secrets.keys())
+api_key = secrets["OPENAI_API_KEY"]
+def wrap_cover_letter_generation(cv_file_path, job_description_text, ai_model,parser, method='basic',
+                                 base_dir = "CoverLetterGen"):
+
 
     # Initialize the appropriate AI model based on the llm_provider argument
-    if llm_provider == 'openai':
-        ai_model = OpenAIModel(api_key=api_key, model_name='gpt-4')
-    else:
-        raise ValueError(f"Unsupported LLM provider: {llm_provider}")
 
     # Initialize CoverLetterGenerator
+
     cover_letter_gen = CoverLetterGenerator(ai_model)
 
     # Initialize the method-agnostic agent
@@ -50,14 +59,26 @@ def main(cv_file_path, job_description_text, llm_provider='openai', method='basi
     print(improved_cover_letter)
     print("Critique of the Final Cover Letter")
     print(last_critique)
-    # Create a PDF of the final cover letter
-    output_pdf_path = "Output/cover_letter.pdf"
-    create_pdf(output_pdf_path, applicant_name, improved_cover_letter)
-    print(f"Cover letter saved to {output_pdf_path}")
 
+
+    sections_cover_letter = parser.parse_cv_and_cover_letter_to_dict(cv_text, cover_letter)
+    print(sections_cover_letter)
+    output_path = os.path.join(base_dir,"Output","CoverLetter","CoverLetterTest")
+    template_cover_letter_path = os.path.join(base_dir,"Templates","StylishCoverLetter.docx")
+    generate_cv(output_path,sections_cover_letter,template_cover_letter_path)
+    # Create a PDF of the final cover letter
+    #output_pdf_path = "Output/cover_letter.pdf"
+    #create_pdf(output_pdf_path, applicant_name, improved_cover_letter)
+    #print(f"Cover letter saved to {output_pdf_path}")
+    return f"{output_path}.docx"
 
 if __name__ == "__main__":
-    cv_file_path = os.path.join("Data", 'CV_GPT_rev.pdf')
+    #Load API key securely
+    #api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        raise ValueError("API key not found. Please set the appropriate environment variable.")
+    ai_model = OpenAIModel(api_key=api_key, model_name='gpt-4o')
+    cv_file_path = os.path.join("Data", 'CV' ,'CV_GPT_N5.pdf')
     job_description_text = """ We're seeking an AI Developer to join our team. In this role, you'll leverage artificial intelligence and machine learning techniques to improve the invoice reconciliation process and create a unified data format across various financial systems.
 
     Responsibilities:
@@ -82,7 +103,9 @@ if __name__ == "__main__":
 
     """
     # Run with basic iterative method
-    main(cv_file_path, job_description_text, method='basic')
+    parser = CVParserAI(OpenAI(api_key=api_key))
+    output_path = wrap_cover_letter_generation(cv_file_path, job_description_text,ai_model,parser, method='basic')
+    print("file location is %s"%output_path)
     """
     # Run with actor-critic method
     main(cv_file_path, job_description_text, method='actor_critic')

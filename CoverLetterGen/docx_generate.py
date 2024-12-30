@@ -1,41 +1,92 @@
-import os
-from openai import OpenAI
-from dotenv import load_dotenv
 from docx import Document
 from docx.shared import Pt, RGBColor
-from data_handling import load_and_extract_text
-# Load OpenAI API key from .env file
-load_dotenv('.env', override=True)
-openai_api_key = os.getenv('OPENAI_API_KEY')
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+import re,os
 
-# Set up OpenAI client
-client = OpenAI(api_key=openai_api_key)
-
-def get_llm_response(prompt):
+def extract_cv_sections(cv_content):
     """
-    Function to get a response from OpenAI GPT model.
+    Extracts various sections from the CV content by identifying common section headers.
+
+    Args:
+        cv_content (str): The full text of the CV.
+
+    Returns:
+        dict: A dictionary with section names as keys and section content as values.
     """
-    try:
-        if not isinstance(prompt, str):
-            raise ValueError("Input must be a string enclosed in quotes.")
-        completion = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant specialized in adapting CVs.",
-                },
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.0,
-        )
-        response = completion.choices[0].message.content
-        return response
-    except Exception as e:
-        print(f"Error: {str(e)}")
+    section_patterns = {
+        "Name": r"^\s*(.*?)\s*\n",
+        "Contact": r"Contact:(.*?)\n\n",
+        "Summary": r"Summary:(.*?)\n\n",
+        "Experience": r"Experience:(.*?)\n\n",
+        "Education": r"Education:(.*?)\n\n",
+        "Skills": r"Skills:(.*?)\n\n",
+        "Projects": r"Projects:(.*?)\n\n",
+        "Publications": r"Publications:(.*?)\n\n",
+        "LinkedIn": r"LinkedIn:(.*?)\n",
+        "GitHub": r"GitHub:(.*?)\n"
+    }
+
+    sections = {}
+    for section, pattern in section_patterns.items():
+        match = re.search(pattern, cv_content, re.DOTALL | re.MULTILINE)
+        if match:
+            sections[section] = match.group(1).strip()
+        else:
+            sections[section] = ""
+    return sections
+def save_cv_sections_to_file(sections, file_path):
+    """
+    Saves the extracted CV sections to a file in a structured format.
+
+    Args:
+        sections (dict): A dictionary containing CV sections as keys and content as values.
+        file_path (str): The path of the file to save the structured output.
+    """
+    print("In save_cv_sections_to_file")
+    with open(file_path, "w", encoding="utf-8") as f:
+        for section, content in sections.items():
+            f.write(f"{section}:\n")
+            f.write(f"{content}\n\n")  # Add spacing for readability
+            print(section,":" ,content)
+    print(f"CV sections saved to {file_path}")
 
 
-def format_header(paragraph, font_size, bold=True, color=(31, 56, 100)):
+def load_cv_sections_from_file(file_path):
+    """
+    Loads CV sections from a structured text file back into a dictionary.
+
+    Args:
+        file_path (str): The path of the file containing the CV sections.
+
+    Returns:
+        dict: A dictionary with section names as keys and section content as values.
+    """
+    sections = {}
+    current_section = None
+    content = []
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            # Check if the line is a section header (e.g., "Name:", "Experience:")
+            if line.strip().endswith(":"):
+                # Save previous section if there was any
+                if current_section:
+                    sections[current_section] = "\n".join(content).strip()
+
+                # Start a new section
+                current_section = line.strip()[:-1]  # Remove the colon at the end
+                content = []
+            else:
+                # Add lines to the current section content
+                content.append(line.strip())
+
+        # Save the last section
+        if current_section:
+            sections[current_section] = "\n".join(content).strip()
+
+    return sections
+
+def format_header(paragraph, font_size=14, bold=True, color=(31, 56, 100)):
     """
     Formats the paragraph as a header with specified font size, boldness, and color.
     """
@@ -44,118 +95,134 @@ def format_header(paragraph, font_size, bold=True, color=(31, 56, 100)):
     run.font.color.rgb = RGBColor(*color)
     run.bold = bold
 
-
-def add_plain_text(doc, content):
+def add_section(doc, section_title, content, is_bullet=False):
     """
-    Adds plain text content to the document without bullets.
-    This explicitly removes any bullet characters and resets the style to "Normal".
+    Adds a section to the document with an optional bullet style.
     """
-    for line in content.split('\n'):
-        line = line.replace('●', '').strip()  # Remove bullet symbols
-        if line:
-            # Add paragraph with explicit "Normal" style to avoid bullets
-            paragraph = doc.add_paragraph(line, style='Normal')
+    # Add section header
+    header = doc.add_paragraph(section_title)
+    format_header(header)
+
+    # Add section content
+    if is_bullet:
+        for line in content.split('\n'):
+            if line.strip():
+                doc.add_paragraph(line, style='List Bullet')
+    else:
+        for line in content.split('\n'):
+            if line.strip():
+                paragraph = doc.add_paragraph(line)
+                paragraph.paragraph_format.line_spacing = 1.15
 
 
-def clean_extracted_text(extracted_text):
+def generate_cv_document(file_name, sections):
     """
-    Cleans the extracted text from a PDF by removing extra newlines and
-    ensuring proper spacing and formatting.
+    Generate and save a CV document based on structured content sections.
+
+    Args:
+        file_name (str): Destination path for the generated CV.
+        sections (dict): Extracted sections of the CV, e.g., {"Name": ..., "Experience": ...}
     """
-    # Remove excessive newlines and extra spaces
-    cleaned_text = "\n".join([line.strip() for line in extracted_text.splitlines() if line.strip()])
-    return cleaned_text
-
-
-def create_cv_doc(original_cv, job_description, file_name):
-    """
-    Adapts a CV based on a job description using GPT-4 and saves it as a DOCX file
-    with professional formatting.
-
-    Parameters:
-    - original_cv (str): The original CV content.
-    - job_description (str): The job description to adapt the CV to.
-    - file_name (str): Name of the DOCX file to be saved.
-    """
-    prompt = f"""
-    Given the following original CV and job description, adapt the CV to align with the job requirements:
-
-    Job Description:
-    {job_description}
-
-    Original CV:
-    {original_cv}
-
-    Focus on relevant skills, experience, and qualifications for the job.
-    """
-
-    # Get the adapted CV from GPT-4
-    adapted_cv = get_llm_response(prompt)
-
-    # Create a DOCX file
     doc = Document()
 
-    # Add proper contact info formatting with line breaks
-    doc.add_paragraph("Itay Ben-Dan", style="Title")
-    doc.add_paragraph("Haarava 20\nHerzliya, Israel 46100", style="Normal")
-    doc.add_paragraph("Cellular: +972544539284", style="Normal")
-    doc.add_paragraph("Email: itaybd@gmail.com", style="Normal")
+    # Add Name and Contact Info
+    doc.add_paragraph(sections.get("Name", "Name Not Provided"), style="Title").alignment = WD_ALIGN_PARAGRAPH.CENTER
+    contact_info = sections.get("Contact", "")
+    phone = sections.get("Phone", "")
+    email = sections.get("Email", "")
+    linkedin = sections.get("LinkedIn", "")
+    github = sections.get("GitHub", "")
 
-    # Ensure contact info is formatted clearly with proper line breaks
-    doc.add_paragraph()
+    # Construct contact information string
+    contact = f"{contact_info}\n"
+    if phone:
+        contact += f"Cellular: {phone}\n"
+    if email:
+        contact += f"Email: {email}\n"
+    if linkedin:
+        contact += f"LinkedIn: {linkedin}\n"
+    if github:
+        contact += f"GitHub: {github}\n"
 
-    # Split adapted CV into sections and add formatting
-    sections = adapted_cv.split('\n\n')
+    # Add contact info to the document
+    contact_para = doc.add_paragraph(contact)
+    contact_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    for section in sections:
-        if "Professional Summary" in section:
-            parts = section.split('\n', 1)
-            content = parts[1] if len(parts) > 1 else parts[0]
-            add_formatted_section(doc, 'Professional Summary', content)
-        elif "Skills" in section:
-            parts = section.split('\n', 1)
-            content = parts[1] if len(parts) > 1 else parts[0]
-            add_formatted_section(doc, 'Key Skills', content, bullet_points=False)  # No bullets
-        elif "Experience" in section:
-            parts = section.split('\n', 1)
-            content = parts[1] if len(parts) > 1 else parts[0]
-            add_formatted_section(doc, 'Professional Experience', content, bullet_points=False)  # No bullets
-        elif "Education" in section:
-            parts = section.split('\n', 1)
-            content = parts[1] if len(parts) > 1 else parts[0]
-            add_formatted_section(doc, 'Education', content, bullet_points=False)  # No bullets
+    # Add each section with formatting based on content type
+    if "Summary" in sections:
+        add_section(doc, "Professional Summary", sections["Summary"])
+
+    if "Experience" in sections:
+        add_section(doc, "Professional Experience", sections["Experience"], is_bullet=True)
+
+    if "Education" in sections:
+        add_section(doc, "Education", sections["Education"])
+
+    if "Skills" in sections:
+        add_section(doc, "Key Skills", sections["Skills"], is_bullet=True)
+
+    if "Projects" in sections:
+        add_section(doc, "Projects", sections["Projects"], is_bullet=True)
+
+    if "Publications" in sections:
+        add_section(doc, "Publications", sections["Publications"])
 
     # Save the document
-    doc_path = f'{file_name}.docx'
-    doc.save(doc_path)
-    return doc_path
-
-
-def add_formatted_section(doc, section_name, content, bullet_points=False):
-    """
-    Adds a formatted section header and corresponding content to the document without bullets.
-    """
-    section_paragraph = doc.add_paragraph(section_name)
-    format_header(section_paragraph, font_size=14, bold=True)
-
-    # Add the section content without bullets
-    add_plain_text(doc, content)
+    doc.save(file_name)
+    print(f"Generated CV document saved as {file_name}")
 
 
 if __name__ == "__main__":
-    # Example CV and job description
-    sample_pdf_path = os.path.join("Data", 'CV_GPT_rev.pdf')
-    original_cv = load_and_extract_text(sample_pdf_path)
+    # Example of calling the function with sample structured content
+    file_name = "Improved_CV_4.docx"
+    finalized_cv_content = {
+        "Name": "Itay Ben-Dan",
+        "Contact": "Haarava 20, Herzliya, Israel 46100",
+        "Phone": "+972544539284",
+        "Email": "itaybd@gmail.com",
+        "Summary": "Senior Data Scientist and Machine Learning Engineer with extensive experience in data engineering, model development...",
+        "Experience": "2017-Present: Machine Learning and Data Science Consultant\n- Developed predictive models from scratch...",
+        "Education": "2009: Ph.D. in Mathematics, Technion, Haifa\n2004: M.Sc. in Mathematics, Technion, Haifa...",
+        "Skills": "- Programming Languages: Python, C++, R, Java\n- Machine Learning Frameworks: TensorFlow, PyTorch, Scikit-learn...",
+        "Projects": "TreeModelVis\n- Developed a visualization tool for decision paths...",
+        "Publications": "Published several papers on Computational Geometry and Machine Learning."
+    }
 
-    # Clean the extracted text
-    original_cv = clean_extracted_text(original_cv)
+    finalized_cv_content = """
+    Itay Ben-Dan
+    Contact:
+    Haarava 20, Herzliya, Israel 46100
+    +972544539284
+    itaybd@gmail.com
+    LinkedIn: Itay Ben-Dan
 
-    job_description = """
-    NVIDIA SOC Architecture team is looking for a Senior Data Scientist with SW development skills and HW-System architecture experience. In this position, you will develop datasets, AI models and train AI models for advanced system architecture Power and Performance features, and collaborate with HW & System architects. Strong proficiency in Python, C/C++ required.
+    Summary:
+    Highly skilled AI Developer and Machine Learning Engineer specializing in financial data analytics, invoice reconciliation, and NLP techniques for text analysis...
+
+    Experience:
+    2017-Present: Machine Learning and Data Science Consultant
+    - Developed and deployed AI models for predictive analysis and automated invoice reconciliation...
+
+    Education:
+    2009: Ph.D. in Mathematics, Technion, Haifa
+    - Focus: Discrete Geometry
+
+    Skills:
+    Python, R, C++, Java
+    TensorFlow, PyTorch, Scikit-learn
+    Pandas, NumPy, SQL
+
+    Projects:
+    TreeModelVis
+    - Developed a visualization tool for tree-based models...
+
+    Publications:
+    Published numerous papers in Computational Geometry and Combinatorial Theory.
     """
 
-    out = os.path.join("Output", "Itay_Ben_Dan_CV_Final_Fixed_v10_No_Bullets")
-    # Create the CV document with professional formatting and no bullets
-    doc_file_path = create_cv_doc(original_cv, job_description, out)
+    # Generate the CV
 
-    print(f"The adapted CV has been saved to: {doc_file_path}")
+    print(extract_cv_sections(finalized_cv_content))
+    sections = load_cv_sections_from_file("Output\Sections\CV_N.txt")
+    #generate_cv_document(file_name, extract_cv_sections(finalized_cv_content))
+    generate_cv_document(file_name, sections)

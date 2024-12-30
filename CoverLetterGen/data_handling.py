@@ -14,6 +14,7 @@ def load_and_extract_text(file_path):
     Returns:
         str: The extracted text from the PDF.
     """
+    print(os.path.abspath(file_path))
     text = extract_text(file_path)
     return text
 """ 

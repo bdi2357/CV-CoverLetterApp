@@ -78,7 +78,7 @@ class GeminiModel(LLMModel):
 # OpenAI implementation of LLMModel
 class OpenAIModel(LLMModel):
     """
-    Class to interact with the OpenAI API using a clIent instance.
+    Class to interact with the OpenAI API using a client instance.
     """
 
     def __init__(self, api_key, model_name='gpt-3.5-turbo'):
@@ -89,12 +89,12 @@ class OpenAIModel(LLMModel):
             api_key (str): The OpenAI API key.
             model_name (str): The model to use, default is 'gpt-3.5-turbo'.
         """
-
-
+        import openai
+        self.api_key = api_key
         self.client = openai.OpenAI(api_key=api_key)
         self.model_name = model_name
 
-    def get_response(self, prompt, history=None, temperature=0.7):
+    def get_response(self, prompt, history=None, temperature=0.99):
         """
         Get the response from the OpenAI model for the given prompt.
 
@@ -185,26 +185,33 @@ Tailor the letter to the specific job requirements and showcase the candidate's 
         Returns:
             tuple: A tuple containing the critique text and the overall grade.
         """
-        prompt = f"""I need you to critique a cover letter submitted for an AI Developer role. Evaluate it based on:
+        prompt = f"""I need you to critique a cover letter submitted for an AI Developer role. Evaluate it based on the following criteria:
 
-    1. **Relevance to the Job**
-    2. **Form and Structure**
-    3. **Reliability**
-    4. **Professional Matching**
-    5. **Overall Impression**
+        1. **Relevance to the Job**  
+        2. **Form and Structure**  
+        3. **Reliability**  
+        4. **Professional Matching**  
 
-    Provide an overall grade on a scale of 1-10 at the end in the format: **#Overall Grade : NUMBER#**
+        For each criterion:  
+        - Provide a grade on a scale of 1-10 in the format: **#<Criterion Name> Grade: NUMBER#**  
+        - Accompany each grade with a brief explanation highlighting strengths and areas for improvement.
 
-    **Cover Letter**:
-    {cover_letter}
+        Additionally:  
+        - Provide an **Overall Grade** for the cover letter on a scale of 1-10 using the format: **#Overall Grade: NUMBER#**  
+        - Explain what influenced the overall score, emphasizing key strengths and critical weaknesses.
 
-    **Resume (CV)**:
-    {cv_text}
+        Here are the inputs:
 
-    **Job Description**:
-    {job_description_text}
+        **Cover Letter**:  
+        {cover_letter}  
 
-    Please ensure the grade is clearly provided using this exact format. Do NOT deviate from this format."""
+        **Resume (CV)**:  
+        {cv_text}  
+
+        **Job Description**:  
+        {job_description_text}  
+
+        Please ensure the grades and explanations are clearly structured, following the exact format specified."""
 
         response = self.ai_model.get_response(prompt, history=history)
 
@@ -271,4 +278,178 @@ Critique:
 
 Tailor the letter to the job requirements, highlighting relevant skills and experiences. Keep it professional and concise, no more than 4 sentences. Avoid emotive adjectives. Finalize with 'Best regards,' followed by the applicant's name from the CV."""
         return self.ai_model.get_response(prompt, history=history)
+
+
+# ai_interaction.py
+class CVGenerator:
+    """
+    Class to generate and improve CVs using any LLM model.
+    """
+
+    def __init__(self, ai_model):
+        """
+        Initialize with an instance of LLMModel.
+
+        Args:
+            ai_model (LLMModel): The LLM model to use for generation.
+        """
+        self.ai_model = ai_model
+
+    def generate_cv(self, cv_content, job_description_text, original_cv, history=None):
+        """
+        Generate an improved CV based on the original CV and job description.
+
+        Args:
+            cv_content (str): The current version of the CV content.
+            job_description_text (str): The job description text.
+            original_cv (str): The original, full text of the CV.
+
+        Returns:
+            str: The improved CV content.
+        """
+        prompt = f"""
+        Review and improve the current CV content based on the original CV and the provided job description. Focus on the following:
+
+        1. **Relevance to the Job**  
+           - Identify and incorporate key skills, technologies, and terminologies from the job description into the CV (e.g., {job_description_text}).  
+           - Highlight specific roles, projects, or achievements that directly align with the job's requirements. Ensure that the CV effectively emphasizes the candidate's most relevant experience.
+
+        2. **Clarity and Structure**  
+           - Ensure the CV follows a clear and logical structure with well-defined sections: Professional Summary, Experience, Education, Skills, Projects, and Publications.  
+           - Improve readability by using consistent bullet points and formatting. 
+
+        3. **Achievements and Impact**  
+           - Emphasize measurable achievements (e.g., “Improved system efficiency by 20%”) where possible.  
+           - When specific metrics aren’t available, highlight qualitative impacts to demonstrate the value delivered.
+
+        4. **ATS Optimization**  
+           - Naturally incorporate keywords and phrases from the job description throughout the CV.  
+           - Ensure that relevant technologies and industry-specific jargon are included in the Professional Summary, Experience, and Skills sections to enhance ATS compatibility.
+
+        5. **Professional Tone**  
+           - Maintain a concise and professional tone throughout. Ensure there are no grammatical errors or formatting inconsistencies.
+
+        Update the current CV version based on these guidelines while preserving essential information from the original CV.
+
+        **Inputs**:
+
+        **Original CV**:  
+        {original_cv}  
+
+        **Current CV Version**:  
+        {cv_content}  
+
+        **Job Description**:  
+        {job_description_text}  
+        """
+
+        return self.ai_model.get_response(prompt, history=history)
+
+    def create_critique(self, cv_content, original_cv, job_description_text, history=None):
+        """
+        Generate a critique of the CV based on its relevance, structure, and professional appeal.
+
+        Args:
+            cv_content (str): The content of the current version of the CV.
+            original_cv (str): The original, full text of the CV.
+            job_description_text (str): The job description text.
+            history (list): Conversation history.
+
+        Returns:
+            tuple: A tuple containing the critique text and the overall grade.
+        """
+        print(cv_content)
+        prompt = f"""Provide a detailed critique of the following CV based on these criteria:
+
+        1. **Relevance to the Job**  
+           - Does the CV emphasize skills and experiences directly aligned with the job description?  
+           - Grade: **#Relevance to the Job Grade: NUMBER##**  
+           - Explain how well the CV aligns with the job requirements.
+
+        2. **Clarity and Structure**  
+           - Is the CV easy to read, well-organized, and logically structured?  
+           - Grade: **#Clarity and Structure Grade: NUMBER##**  
+           - Assess whether the layout enhances readability.
+
+        3. **Skills Presentation**  
+           - Are the candidate's technical and soft skills adequately highlighted and relevant?  
+           - Grade: **#Skills Presentation Grade: NUMBER##**  
+           - Highlight strengths and areas for improvement in skills representation.
+
+        4. **Professionalism**  
+           - Is the CV professional in tone, free of errors, and written in clear language?  
+           - Grade: **#Professionalism Grade: NUMBER##**  
+           - Note any tone, grammar, or formatting issues.
+
+        5. **Overall Impression**  
+           - How well does the CV present the candidate as a strong fit for the role?  
+           - Grade: **#Overall Grade: NUMBER.#**  
+           - Summarize key strengths and critical weaknesses.
+
+        **Instructions**:  
+        - Ensure each grade follows the specified format **#Criterion Name Grade: NUMBER##** for criteria grades, and **#Overall Grade: NUMBER.#** for the overall impression.  
+        - Provide actionable feedback, even if sections are sparse or incomplete.  
+
+        **Inputs**:
+
+        **Current CV Version**:  
+        {cv_content}  
+
+        **Job Description**:  
+        {job_description_text}  
+
+        Ensure consistency and provide all grades using the required format. Keeping grades using the required format is very important."""
+
+        response = self.ai_model.get_response(prompt, history=history,temperature= 0.01)
+
+        if response is None:
+            raise ValueError("Failed to get a response from the AI model.")
+
+        # Adjusted regular expression to allow flexibility in spaces and format
+        print(response)
+        print("?"*100)
+        grades = {
+            "Relevance to the Job": r"#Relevance to the Job Grade\s*:\s*(\d+(\.\d+)?)#",
+            "Clarity and Structure": r"#Clarity and Structure Grade\s*:\s*(\d+(\.\d+)?)#",
+            "Skills Presentation": r"#Skills Presentation Grade\s*:\s*(\d+(\.\d+)?)#",
+            "Professionalism": r"#Professionalism Grade\s*:\s*(\d+(\.\d+)?)#",
+            "Overall": r"#Overall Grade\s*:\s*(\d+(\.\d+)?)#",
+        }
+        flag = False
+        grades_res = {}
+        for name, pattern in grades.items():
+            print(name)
+            match = re.search(pattern, response)
+
+            if not match:
+                flag = True
+            else:
+                grades_res[name] = float(re.search(grades[name], response).group(1))
+                #raise ValueError(f"Failed to extract {name} grade.")
+        if flag:
+            response = self.ai_model.get_response(prompt, history=history, temperature=0.01)
+
+            if response is None:
+                raise ValueError("Failed to get a response from the AI model.")
+
+            # Adjusted regular expression to allow flexibility in spaces and format
+
+            for name, pattern in grades.items():
+                print(name)
+                match = re.search(pattern, response)
+                print(float(re.search(grades[name], response).group(1) ))
+                grades_res[name] = float(re.search(grades[name], response).group(1) )
+                if not match:
+                    raise ValueError(f"Failed to extract {name} grade.")
+
+        grade = float(re.search(grades["Overall"], response).group(1) )
+        """
+        match = re.search(r"\*\*Overall Grade:\s*(\d+(\.\d+)?)\*\*", response)
+        if match:
+            grade = float(match.group(1))
+        else:
+            raise ValueError("Failed to extract overall grade from the critique.")
+        """
+        print("grades_res",grades_res)
+        return response, grade,grades_res
 
