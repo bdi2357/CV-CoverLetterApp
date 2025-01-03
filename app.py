@@ -154,19 +154,28 @@ if st.button('Generate Cover Letter'):
         #docx_file_path = save_cover_letter_to_docx(improved_cover_letter, "cover_letter.docx")
         #critique_cover_file_path = save_cover_letter_to_docx(final_critique, "cover_letter_critique.docx")
 
+        st.session_state.output_path = output_path
+        st.session_state.critique_cover_file_path = critique_cover_file_path
         # Display the cover letter to the user
         st.success('✅ Cover Letter generated successfully!')
         print(output_path)
+        print("st.session_state.output_path", st.session_state.output_path)
+        print("st.session_state.critique_cover_file_path",st.session_state.critique_cover_file_path)
+if st.session_state.output_path and st.session_state.critique_cover_file_path:
+    with open(st.session_state.output_path, 'rb') as f:
         st.download_button(
             label='📥 Download Cover Letter',
             #data=open(docx_file_path, 'rb').read(),
-            data=open(output_path, 'rb').read(),
+            data=f.read(),
             file_name='cover_letter.docx',
             mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         )
+        print("H1")
+    with open(st.session_state.critique_cover_file_path, 'rb') as f:
         st.download_button(
             label='📥 Download Cover Letter Critique',
-            data=open(critique_cover_file_path, 'rb').read(),
+            data=f.read(),
             file_name='cover_letter_critique.docx',
             mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         )
+        print("H2")
