@@ -11,21 +11,12 @@ from .parsing_cv_to_dict import CVParserAI
 #load_dotenv('.env', override=True)
 from openai import OpenAI
 from .doc_from_template import generate_cv
+from .parse_critique_to_dict import parse_cover_letter_critique_to_dict
+from .ExtractCompanyNameJob import extract_company_name_and_job_name
 import toml
 import streamlit as st
-#api_key =  st.secrets["OPENAI_API_KEY"]
-os.environ["STREAMLIT_SECRETS_PATH"] = r"C:\Users\itayb\PycharmProjects\CV-CoverLetterApp\.streamlit\secrets.toml"
 
-# Load the secrets file manually
-secrets_path = os.environ["STREAMLIT_SECRETS_PATH"]
-with open(secrets_path, "r") as file:
-    secrets = toml.load(file)
-
-# Access the API key
-print(secrets.keys())
-api_key = secrets["OPENAI_API_KEY"]
-def wrap_cover_letter_generation(cv_file_path, job_description_text, ai_model,parser, method='basic',
-                                 base_dir = "CoverLetterGen"):
+def wrap_cover_letter_generation(cv_file_path, job_description_text, ai_model,parser, method='basic',base_dir = "CoverLetterGen"):
 
 
     # Initialize the appropriate AI model based on the llm_provider argument
@@ -62,19 +53,39 @@ def wrap_cover_letter_generation(cv_file_path, job_description_text, ai_model,pa
 
 
     sections_cover_letter = parser.parse_cv_and_cover_letter_to_dict(cv_text, cover_letter)
+    sections_critique = parse_cover_letter_critique_to_dict(last_critique,"","")
+
+    company_name_and_job_name = extract_company_name_and_job_name(job_description_text,ai_model.api_key)
+    #personal_info = extract_information_from_cv(cv_text,ai_model.api_key)
+
+    #candidate_name = personal_info.get('Full name', '')
+    #sections_cover_letter["title"] = company_name_and_job_name
     print(sections_cover_letter)
     output_path = os.path.join(base_dir,"Output","CoverLetter","CoverLetterTest")
+    output_criqique_path = os.path.join(base_dir,"Output", "CoverLetter", "CoverLetterCritiqueTest")
     template_cover_letter_path = os.path.join(base_dir,"Templates","StylishCoverLetter.docx")
     generate_cv(output_path,sections_cover_letter,template_cover_letter_path)
+    candidate_name = extract_applicant_name(cv_text)
+    sections_critique["title"] = company_name_and_job_name
+    sections_critique["name"] = candidate_name
+    print(sections_critique['sections'])
+    sections_critique["TotalGrade"] = sum([float(section["Grade"]) for section in sections_critique['sections']])/float(len(sections_critique['sections']))
+    template_cover_letter_critique_path = os.path.join(base_dir,"Templates","Critique_Template_n1.docx")
+    print(sections_critique)
+    print(sections_critique.keys())
+    print(type(sections_critique['TotalGrade']))  # Ensure it's a float
+    generate_cv(output_criqique_path,sections_critique,template_cover_letter_critique_path)
     # Create a PDF of the final cover letter
     #output_pdf_path = "Output/cover_letter.pdf"
     #create_pdf(output_pdf_path, applicant_name, improved_cover_letter)
     #print(f"Cover letter saved to {output_pdf_path}")
-    return f"{output_path}.docx"
+    print(last_critique)
+    return output_path +".docx",output_criqique_path + ".docx"
+    #print(personal_info)
 
 if __name__ == "__main__":
     #Load API key securely
-    #api_key = os.getenv('OPENAI_API_KEY')
+    api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
         raise ValueError("API key not found. Please set the appropriate environment variable.")
     ai_model = OpenAIModel(api_key=api_key, model_name='gpt-4o')
@@ -103,9 +114,8 @@ if __name__ == "__main__":
 
     """
     # Run with basic iterative method
-    parser = CVParserAI(OpenAI(api_key=api_key))
-    output_path = wrap_cover_letter_generation(cv_file_path, job_description_text,ai_model,parser, method='basic')
-    print("file location is %s"%output_path)
+    parser = CVParserAI(OpenAI())
+    wrap_cover_letter_generation(cv_file_path, job_description_text,ai_model,parser, method='basic')
     """
     # Run with actor-critic method
     main(cv_file_path, job_description_text, method='actor_critic')

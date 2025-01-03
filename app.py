@@ -149,13 +149,14 @@ if st.button('Generate Cover Letter'):
         print(type(uploaded_cv))
         #print("*"*70 +"\n" + uploaded_cv +"\n" +"*"*70)
         print(cv_saved_path)
-        output_path = wrap_cover_letter_generation(cv_saved_path, job_description, ai_model, parser, method='basic')
+        output_path,critique_cover_file_path = wrap_cover_letter_generation(cv_saved_path, job_description, ai_model, parser, method='basic')
         # Save the improved cover letter as a DOCX file
         #docx_file_path = save_cover_letter_to_docx(improved_cover_letter, "cover_letter.docx")
         #critique_cover_file_path = save_cover_letter_to_docx(final_critique, "cover_letter_critique.docx")
 
         # Display the cover letter to the user
         st.success('✅ Cover Letter generated successfully!')
+        print(output_path)
         st.download_button(
             label='📥 Download Cover Letter',
             #data=open(docx_file_path, 'rb').read(),
