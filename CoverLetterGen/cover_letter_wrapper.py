@@ -63,6 +63,8 @@ def wrap_cover_letter_generation(cv_file_path, job_description_text, ai_model,pa
     print(sections_cover_letter)
     output_path = os.path.join(base_dir,"Output","CoverLetter","CoverLetterTest")
     output_criqique_path = os.path.join(base_dir,"Output", "CoverLetter", "CoverLetterCritiqueTest")
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    os.makedirs(os.path.dirname(output_criqique_path), exist_ok=True)
     template_cover_letter_path = os.path.join(base_dir,"Templates","StylishCoverLetter.docx")
     generate_cv(output_path,sections_cover_letter,template_cover_letter_path)
     candidate_name = extract_applicant_name(cv_text)
