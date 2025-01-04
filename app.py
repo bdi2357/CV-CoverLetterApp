@@ -161,6 +161,12 @@ if st.button('Generate Cover Letter'):
         print(output_path)
         print("st.session_state.output_path", st.session_state.output_path)
         print("st.session_state.critique_cover_file_path",st.session_state.critique_cover_file_path)
+
+if "output_path" not in st.session_state:
+    st.session_state.output_path = None
+if "critique_cover_file_path" not in st.session_state:
+    st.session_state.critique_cover_file_path = None
+
 if st.session_state.output_path and st.session_state.critique_cover_file_path:
     with open(st.session_state.output_path, 'rb') as f:
         st.download_button(
